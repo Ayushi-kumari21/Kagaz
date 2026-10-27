@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { PDFDocument, degrees } from 'pdf-lib'
 import { FileDrop, Notice, Progress, ToolHeader } from '../components/ui'
-import { baseName, downloadBlob, renderThumbnails } from '../lib/pdf'
+import { baseName, describePdfError, downloadBlob, renderThumbnails } from '../lib/pdf'
 import { Icon } from '../components/icons'
 
 interface PageItem {
@@ -30,8 +30,9 @@ export default function Organize() {
       setBusy('Loading pages…')
       const t = await renderThumbnails(buf, 150, (d, n) => setProgress(d / n))
       setItems(t.map((thumb, i) => ({ src: i, rot: 0, thumb })))
-    } catch {
-      setError('Could not open this PDF.')
+    } catch (e) {
+      console.error(e)
+      setError(describePdfError(e))
       setFile(null)
     } finally {
       setBusy('')

@@ -1,18 +1,41 @@
-import * as pdfjs from 'pdfjs-dist'
+// The "legacy" build of pdf.js includes polyfills. The default build relies on very new
+// browser features (e.g. Math.sumPrecise) and fails to open any PDF in most current browsers.
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist'
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
+
+// data files copied by the pdfjs-assets plugin in vite.config.ts
+const ASSETS = `${import.meta.env.BASE_URL}pdfjs/`
 
 export type { PDFDocumentProxy, PDFPageProxy }
 
 /** Open a PDF for viewing/rendering (pdf.js). Pass a copy: pdf.js transfers the buffer. */
 export async function openPdf(bytes: ArrayBuffer | Uint8Array): Promise<PDFDocumentProxy> {
   const data = bytes instanceof Uint8Array ? bytes.slice() : new Uint8Array(bytes.slice(0))
-  return pdfjs.getDocument({ data }).promise
+  return pdfjs.getDocument({
+    data,
+    cMapUrl: `${ASSETS}cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${ASSETS}standard_fonts/`,
+    wasmUrl: `${ASSETS}wasm/`,
+    iccUrl: `${ASSETS}iccs/`,
+  }).promise as unknown as Promise<PDFDocumentProxy>
 }
 
-export const AnnotationMode = pdfjs.AnnotationMode
+/** Turn a pdf.js / pdf-lib failure into a message a person can act on. */
+export function describePdfError(e: unknown): string {
+  const err = e as { name?: string; message?: string }
+  const name = err?.name || ''
+  const msg = err?.message || String(e)
+  if (name === 'PasswordException' || /password/i.test(msg))
+    return 'This PDF is password-protected. Open it with its password in your browser, use Print → Save as PDF to make an unlocked copy, then try again.'
+  if (name === 'InvalidPDFException' || /invalid pdf|not a pdf|no pdf header/i.test(msg))
+    return 'This file is not a valid PDF, or it is damaged. Try downloading it again.'
+  return `Could not open this PDF (${msg.slice(0, 140)}). Try another browser, or send this message to the site owner.`
+}
+
 
 /**
  * Render a page into a new canvas at the given scale.

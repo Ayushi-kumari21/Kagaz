@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { PDFDocument } from 'pdf-lib'
 import JSZip from 'jszip'
 import { FileDrop, Notice, Progress, ToolHeader } from '../components/ui'
-import { baseName, downloadBlob, parseRanges, renderThumbnails } from '../lib/pdf'
+import { baseName, describePdfError, downloadBlob, parseRanges, renderThumbnails } from '../lib/pdf'
 
 type Mode = 'extract' | 'each' | 'chunks'
 
@@ -40,8 +40,9 @@ export default function Split() {
       setBusy('Loading pages…')
       const t = await renderThumbnails(buf, 130, (d, n) => setProgress(d / n))
       setThumbs(t)
-    } catch {
-      setError('Could not open this PDF.')
+    } catch (e) {
+      console.error(e)
+      setError(describePdfError(e))
       setFile(null)
     } finally {
       setBusy('')

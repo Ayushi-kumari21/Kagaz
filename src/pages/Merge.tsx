@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { PDFDocument } from 'pdf-lib'
 import { FileDrop, Notice, ToolHeader } from '../components/ui'
-import { downloadBlob, formatBytes, renderThumbnails } from '../lib/pdf'
+import { describePdfError, downloadBlob, formatBytes, renderThumbnails } from '../lib/pdf'
 import { Icon } from '../components/icons'
 
 interface Item {
@@ -27,8 +27,9 @@ export default function Merge() {
         const d = await PDFDocument.load(buf, { ignoreEncryption: true })
         const [thumb] = await renderThumbnails(buf, 90, undefined, 1)
         next.push({ id: Math.random().toString(36).slice(2), file, pages: d.getPageCount(), thumb })
-      } catch {
-        setError(`Could not read "${file.name}". It may be damaged or password-protected.`)
+      } catch (e) {
+        console.error(e)
+        setError(`${file.name}: ${describePdfError(e)}`)
       }
     }
     setItems((prev) => [...prev, ...next])

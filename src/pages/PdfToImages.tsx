@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import JSZip from 'jszip'
 import { FileDrop, Notice, Progress, ToolHeader } from '../components/ui'
-import { baseName, canvasToBlob, closePdf, downloadBlob, openPdf, renderPage } from '../lib/pdf'
+import { baseName, canvasToBlob, closePdf, describePdfError, downloadBlob, openPdf, renderPage } from '../lib/pdf'
 
 export default function PdfToImages() {
   const [file, setFile] = useState<File | null>(null)
@@ -37,8 +37,9 @@ export default function PdfToImages() {
         blobs.forEach((b, i) => zip.file(`${name}-page-${String(i + 1).padStart(3, '0')}.${ext}`, b))
         downloadBlob(await zip.generateAsync({ type: 'blob' }), `${name}-images.zip`, 'application/zip')
       }
-    } catch {
-      setError('Could not convert this PDF. It may be protected or damaged.')
+    } catch (e) {
+      console.error(e)
+      setError(describePdfError(e))
     } finally {
       setBusy(false)
     }

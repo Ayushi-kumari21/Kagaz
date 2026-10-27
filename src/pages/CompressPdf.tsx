@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CountUp, FileDrop, Notice, Progress, ToolHeader } from '../components/ui'
 import { Icon } from '../components/icons'
 import { compressPdfLevel, compressPdfToTarget, resavePdf, type PdfLevel } from '../lib/compress'
-import { baseName, downloadBlob, formatBytes } from '../lib/pdf'
+import { baseName, describePdfError, downloadBlob, formatBytes } from '../lib/pdf'
 
 type Mode = PdfLevel | 'target'
 
@@ -58,8 +58,9 @@ export default function CompressPdf() {
             : `Could not reach ${target} KB. This is the smallest readable version.`,
         })
       }
-    } catch {
-      setError('Could not compress this PDF. It may be protected or damaged.')
+    } catch (e) {
+      console.error(e)
+      setError(describePdfError(e))
     } finally {
       setBusy(false)
       setStatus('')

@@ -14,7 +14,7 @@ import {
   type PageGeom,
   type TextAnnot,
 } from '../lib/annotations'
-import { baseName, closePdf, downloadBlob, loadImage, openPdf, renderPage, type PDFDocumentProxy } from '../lib/pdf'
+import { baseName, closePdf, describePdfError, downloadBlob, loadImage, openPdf, renderPage, type PDFDocumentProxy } from '../lib/pdf'
 import { extractFields, fieldFontSize, type FormField, type FormValues } from '../lib/forms'
 
 type ToolId = 'select' | 'text' | 'whiteout' | 'highlight' | 'box' | 'draw' | 'check' | 'cross' | 'sign' | 'image'
@@ -147,12 +147,8 @@ export default function Editor() {
       if (form.fields.length)
         toast({ kind: 'info', title: 'Fillable form found', body: `Tap a blue box to fill it. ${new Set(form.fields.map((f) => f.name)).size} fields.` })
     } catch (e) {
-      const msg = (e as Error).message || ''
-      setError(
-        /password/i.test(msg)
-          ? 'This PDF is password-protected. Open it in your browser, print it to a new PDF, then try again.'
-          : 'Could not open this PDF. It may be damaged.',
-      )
+      console.error(e)
+      setError(describePdfError(e))
     } finally {
       setBusy('')
     }
